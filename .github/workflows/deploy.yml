@@ -1,0 +1,61 @@
+# name: Deploy webapp to VPS
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true
+
+# on:
+#   push:
+#     branches: ["main"]
+#   workflow_dispatch:
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v3
+
+#       - uses: webfactory/ssh-agent@v0.7.0
+#         with:
+#           ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+#       - name: Set up Ruby and install kamal
+#         uses: ruby/setup-ruby@v1
+#         with:
+#           ruby-version: 3.2.2
+#       - run: gem install kamal
+
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_ECR }}
+#           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_ECR }}
+#           aws-region: us-east-1
+#           mask-aws-account-id: false
+
+#       - name: Login to AWS ECR
+#         id: login-ecr
+#         uses: aws-actions/amazon-ecr-login@v2
+
+#       - name: Set up Docker Buildx for cache
+#         uses: docker/setup-buildx-action@v3
+
+#       - name: Expose GitHub Runtime for cache
+#         uses: crazy-max/ghaction-github-runtime@v3
+
+#       - name: Create .env file
+#         run: |
+#           cd deploy
+#           touch .env
+#           echo KAMAL_REGISTRY_PASSWORD="${{ steps.login-ecr.outputs.docker_password_<account_id>_dkr_ecr_<region>_amazonaws_com }}" >> .env
+#           echo DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" >> .env
+#           cat .env
+
+#       - name: Kamal Deploy
+#         id: kamal-deploy
+#         run: |
+#           cd deploy
+#           kamal lock release
+#           kamal env push
+#           kamal deploy
