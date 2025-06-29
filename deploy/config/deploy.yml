@@ -9,39 +9,18 @@ env:
   secret:
     - DJANGO_SECRET_KEY
 
-traefik:
-  options:
-    publish:
-      - "443:443"
-    volume:
-      - "/letsencrypt/:/letsencrypt/"
-    memory: 500m
-    network: private_network
-  args:
-    entryPoints.web.address: ":80"
-    entryPoints.websecure.address: ":443"
-    entryPoints.web.http.redirections.entryPoint.to: websecure
-    entryPoints.web.http.redirections.entryPoint.scheme: https
-    entryPoints.web.http.redirections.entrypoint.permanent: true
-    certificatesResolvers.letsencrypt.acme.email: "dylan@iwanalabs.com"
-    certificatesResolvers.letsencrypt.acme.storage: "/letsencrypt/acme.json"
-    certificatesResolvers.letsencrypt.acme.httpchallenge: true
-    certificatesResolvers.letsencrypt.acme.httpchallenge.entrypoint: web
+proxy:
+  ssl: true
+  host: example.iwanalabs.com
+  app_port: 8000
+  healthcheck:
+    path: /kamal/up/
+    interval: 2
+    timeout: 2
 
 servers:
   web:
-    hosts:
-      - 128.140.0.209
-    healthcheck:
-      port: 8000
-      interval: 5s
-    options:
-      network: private_network
-    labels:
-      traefik.http.routers.app.tls: true
-      traefik.http.routers.app.entrypoints: websecure
-      traefik.http.routers.app.rule: Host(`example.iwanalabs.com`)
-      traefik.http.routers.app.tls.certresolver: letsencrypt
+    - 128.140.0.209
 
 accessories:
   redis:
@@ -65,8 +44,8 @@ registry:
     - KAMAL_REGISTRY_PASSWORD
 
 builder:
+  arch: amd64
   dockerfile: "../Dockerfile"
   context: "../"
-  multiarch: false
   cache:
     type: gha
